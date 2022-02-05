@@ -29,6 +29,33 @@ class AuthService{
             }
         })
     }
+
+    static signup(ctx, params){
+        return new Promise(async (resolve, reject) => {
+            try {
+                let params = {...ctx.data}
+                if(!params.username) throw new Error("Insira o seu username para cadastrar")
+                if(!params.email) throw new Error("Insira o seu email para cadastrar")
+                if(!params.birthday) throw new Error("Insira sua data de aniversário para cadastrar")
+                if(!params.password) throw new Error("Insira sua senha para cadastrar")
+    
+                let existent = await UsersModel.query().findOne(raw("email"), params.email)
+                if(existent) throw new Error("Já existe um usuário com esse email")
+    
+                const user = await UsersModel.query().insertAndFetch({
+                    name: params.username,
+                    username: params.username,
+                    email: params.email,
+                    birthday: params.birthday,
+                    password: raw(`md5('${params.password}')`),
+                })
+    
+                resolve(user)
+            }catch(err){
+                reject(err)
+            }
+        })
+    }
 }
 
 export default AuthService
