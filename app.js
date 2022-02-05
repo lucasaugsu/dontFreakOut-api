@@ -5,8 +5,8 @@ import http from 'http';
 import Knex from 'knex';
 import koa from 'koa';
 //import AuthenticationMiddleware from './middlewares/Authentication';
-//import AuthenticationPrivateMiddleware from './middlewares/AuthenticationPrivate';
-//import ActionLogMiddleware from './middlewares/ActionLog';
+import AuthenticationPrivateMiddleware from './middlewares/AuthenticationPrivate';
+import ActionLogMiddleware from './middlewares/ActionLog';
 import { DefaultJobs } from './jobs/DefaultJobs';
 import { DefaultEvents } from './events/DefaultEvents';
 //import { Strings } from './utils/Strings';
@@ -37,10 +37,10 @@ koaServer.use(async (ctx, next) => {
 		send_mail_error: false,
 		save_db: true,
 	}
-    /* if(ctx.method === "GET") ctx.data = {...require('url').parse(ctx.request.url, true).query, ...ctx.params};
+    if(ctx.method === "GET") ctx.data = {...require('url').parse(ctx.request.url, true).query, ...ctx.params};
     else ctx.data = {...ctx.request.body};
 
-    console.log(ctx.method, ctx.url) */
+    console.log(ctx.method, ctx.url)
 
 	ctx.set('Access-Control-Allow-Origin', ctx.request.header.origin || '*')
 	ctx.set('Access-Control-Allow-Headers', ctx.request.header['access-control-request-headers'] || '*')
@@ -60,3 +60,19 @@ io.on('connection', (socket) => {
 })
 
 DefaultJobs({io})
+
+koaServer.use(ActionLogMiddleware)
+//koaServer.use(AuthenticationMiddleware)
+
+const authRouter = new Router({ prefix: '/auth' })
+import { Auth } from './lib/general/Auth'
+Auth(authRouter)
+koaServer.use(authRouter.routes())
+
+// private routes
+koaServer.use(AuthenticationPrivateMiddleware)
+
+const usersRouter = new Router({ prefix: '/users' })
+import { Users } from './lib/general/Users'
+Users(usersRouter)
+koaServer.use(usersRouter.routes())
